@@ -69,7 +69,7 @@ fn parse_mul_sub(tokens: &mut Peekable<Iter<Token>>, mul_sub: MulSub) -> MulSub 
                 let mul_sub = MulSub::Mul(Box::new(mul_sub), Box::new(primary2));
                 return parse_mul_sub(tokens, mul_sub);
             }
-            Token::Sub => {
+            Token::Div => {
                 tokens.next();
                 let primary2 = MulSub::Primary(Box::new(parse_primary(tokens)));
                 let mul_sub = MulSub::Sub(Box::new(mul_sub), Box::new(primary2));

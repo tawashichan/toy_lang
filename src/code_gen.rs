@@ -34,7 +34,7 @@ fn mul_sub_code_gen(mul_sub: MulSub, ops: &mut Vec<Op>) -> &mut Vec<Op> {
         }
         MulSub::Sub(p1, p2) => {
             mul_sub_code_gen(*p2, mul_sub_code_gen(*p1, ops));
-            ops.push(Op::Sub);
+            ops.push(Op::Div);
             ops
         }
         MulSub::Primary(p) => primary_code_gen((*p).clone(), ops),

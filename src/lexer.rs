@@ -1,3 +1,4 @@
+use std::iter::Peekable;
 use std::slice::Iter;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -6,17 +7,23 @@ pub enum Token {
     Plus,
     Minus,
     Mul,
-    Sub,
+    Div,
     LPar,
     RPar,
+    Let,
+    Equal,
+    Assign,
+    Fun,
+    Colon,
+    Str(String),
 }
 
-fn parse_num(first: char,chars: &mut Iter<char>) -> i32 {
+fn parse_num(chars: &mut Peekable<Iter<char>>) -> i32 {
     let mut buf: Vec<char> = vec![];
-    buf.push(first);
-    while let Some(ch) = chars.next() {
+    while let Some(ch) = chars.peek() {
         if ch.is_numeric() {
-            buf.push(*ch)
+            buf.push(**ch);
+            chars.next();
         } else {
             break;
         }
@@ -25,26 +32,65 @@ fn parse_num(first: char,chars: &mut Iter<char>) -> i32 {
     num_str.parse::<i32>().unwrap()
 }
 
-pub fn parse_token(chars: &[char]) -> Vec<Token> {
+fn parse_string(chars: &mut Peekable<Iter<char>>) -> Token {
+    use Token::*;
+    let mut buf: Vec<char> = vec![];
+    while let Some(ch) = chars.peek() {
+        match ch {
+            ' ' => break,
+            ch => {
+                buf.push(**ch);
+                chars.next();
+            }
+        }
+    }
+    let string: String = buf.into_iter().collect();
+    match string.as_str() {
+        "let" => Let,
+        "fun" => Fun,
+        _ => Str(string),
+    }
+}
+
+pub fn parse_token(chars: &mut [char]) -> Vec<Token> {
     let buf = &mut vec![];
-    let tokens = parse_token_sub(chars, buf);
+    let tokens = parse_token_sub(&mut chars.iter().peekable(), buf);
     tokens.to_vec()
 }
 
-fn parse_token_sub<'a>(chars: &[char], tokens: &'a mut Vec<Token>) -> &'a [Token] {
+fn push_and_consume<'a>(
+    chars: &mut Peekable<Iter<char>>,
+    tokens: &'a mut Vec<Token>,
+    token: Token,
+) {
+    chars.next();
+    tokens.push(token);
+}
+
+fn parse_token_sub<'a>(
+    chars: &mut Peekable<Iter<char>>,
+    tokens: &'a mut Vec<Token>,
+) -> &'a [Token] {
     use Token::*;
-    let mut iter = chars.iter();
-    while let Some(ch) = iter.next() {
+    while let Some(ch) = chars.peek() {
         match ch {
-            ' ' | '\t' | '\n' => continue,
-            '+' => tokens.push(Plus),
-            '-' => tokens.push(Minus),
-            '*' => tokens.push(Mul),
-            '(' => tokens.push(LPar),
-            ')' => tokens.push(RPar),
-            _ => {
-                let num = parse_num(*ch,&mut iter);
+            ' ' | '\t' | '\n' => {
+                chars.next();
+                continue;
+            }
+            '+' => push_and_consume(chars, tokens, Plus),
+            '-' => push_and_consume(chars, tokens, Minus),
+            '*' => push_and_consume(chars, tokens, Mul),
+            '/' => push_and_consume(chars, tokens, Div),
+            '(' => push_and_consume(chars, tokens, LPar),
+            ')' => push_and_consume(chars, tokens, RPar),
+            '=' => push_and_consume(chars, tokens, Assign),
+            ch if ch.is_numeric() => {
+                let num = parse_num(chars);
                 tokens.push(Int(num))
+            }
+            _ => {
+                tokens.push(parse_string(chars))
             }
         }
     }

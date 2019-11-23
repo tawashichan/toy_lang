@@ -26,6 +26,7 @@ pub fn code_gen(ops: Iter<Op>) -> String {
             Add => format!("pop rdi\npop rax\nadd rax,rdi\npush rax\n"),
             Mul => format!("pop rdi\npop rax\nimul rax,rdi\npush rax\n"),
             Sub => format!("pop rdi\npop rax\nsub rax,rdi\npush rax\n"),
+            Div => format!("pop rdi\npop rax\nidiv rax,rdi\npush rax\n"),
             _ => format!("")
         };
         format!("{}{}\n", sum, code)
